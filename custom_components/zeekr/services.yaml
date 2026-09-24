@@ -1,0 +1,30 @@
+get_monthly_statistics:
+  name: Get monthly statistics
+  description: Return the monthly journey statistics for one Zeekr vehicle.
+  fields:
+    vin:
+      name: Vehicle VIN
+      required: true
+      selector:
+        text: {}
+    year_month:
+      name: Month
+      required: true
+      description: Month in YYYY-MM format.
+      selector:
+        text: {}
+    account_id:
+      name: Account ID
+      required: true
+      selector:
+        text: {}
+
+get_app_messages:
+  name: Get app messages
+  description: Return app upgrade messages for one Zeekr vehicle.
+  fields:
+    vin:
+      name: Vehicle VIN
+      required: true
+      selector:
+        text: {}

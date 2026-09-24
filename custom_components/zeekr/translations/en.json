@@ -1,0 +1,33 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Zeekr",
+        "description": "Enter the mobile number used by the Zeekr app. A verification code will be sent to that number.",
+        "data": {
+          "mobile": "Mobile number"
+        }
+      },
+      "verify": {
+        "title": "Verify your account",
+        "description": "Enter the SMS verification code.",
+        "data": {
+          "sms_code": "Verification code"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate Zeekr",
+        "description": "Send a new verification code to the configured mobile number."
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not send or verify the SMS request. Check the connection and try again.",
+      "invalid_auth": "The verification code or account credentials were rejected.",
+      "unknown": "Unexpected error. Check the Home Assistant logs."
+    },
+    "abort": {
+      "already_configured": "This Zeekr account is already configured.",
+      "reauth_successful": "Zeekr account reauthenticated."
+    }
+  }
+}
