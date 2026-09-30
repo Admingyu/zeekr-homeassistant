@@ -10,6 +10,8 @@ class ZeekrSentinelCard extends HTMLElement {
     this._mediaType = null;
     this._rtcEvents = null;
     this._remoteUsers = new Set();
+    /** Track whether each published user has produced decoded and rendered frames. */
+    this._remoteFrameStates = new Map();
     this._activeRemoteUser = null;
     this._renewTimer = null;
     this._selectedVin = "";
@@ -62,6 +64,7 @@ class ZeekrSentinelCard extends HTMLElement {
         #video { position: relative; min-height: 240px; margin-top: 12px; background: #111; }
         #video video { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: contain; }
         #empty { color: #ddd; position: absolute; inset: 0; display: grid; place-items: center; }
+        #empty[hidden] { display: none; }
         #status { margin-top: 8px; min-height: 1.5em; }
         #streams { margin-top: 8px; }
       </style>
@@ -137,8 +140,10 @@ class ZeekrSentinelCard extends HTMLElement {
       this._mediaType = MediaType;
       this._rtcEvents = VERTC.events;
       this._remoteUsers.clear();
+      this._remoteFrameStates.clear();
       this._activeRemoteUser = null;
       this._engine = VERTC.createEngine(session.appId);
+      const engine = this._engine;
       this._engine.on(this._rtcEvents.onUserPublishStream, (event) => {
         const isVideo = event.mediaType === this._mediaType.VIDEO ||
           event.mediaType === this._mediaType.AUDIO_AND_VIDEO;
@@ -152,6 +157,12 @@ class ZeekrSentinelCard extends HTMLElement {
       this._engine.on(this._rtcEvents.onError, (error) => {
         this._status.textContent = `RTC 错误：${this._message(error)}`;
       });
+      this._engine.on(this._rtcEvents.onFirstRemoteVideoFrameDecoded, (streamKey) => {
+        if (this._engine === engine) this._reportRemoteVideoFrame(streamKey, "decoded");
+      });
+      this._engine.on(this._rtcEvents.onFirstRemoteVideoFrameRendered, (streamKey) => {
+        if (this._engine === engine) this._reportRemoteVideoFrame(streamKey, "rendered");
+      });
       await this._engine.joinRoom(
         session.accessToken,
         session.roomId,
@@ -162,8 +173,10 @@ class ZeekrSentinelCard extends HTMLElement {
           isAutoSubscribeVideo: true,
         },
       );
-      this._status.textContent = "已加入房间，等待车辆视频…";
-      this._empty.hidden = false;
+      if (!this._activeRemoteUser) {
+        this._status.textContent = "已加入房间，等待车辆视频…";
+        this._empty.hidden = false;
+      }
       this._stopButton.disabled = false;
       this._scheduleRenewal(session);
     } catch (error) {
@@ -172,18 +185,48 @@ class ZeekrSentinelCard extends HTMLElement {
     }
   }
 
-  /** Bind one published remote user's main video stream to the card player. */
-  _selectRemoteUser(userId) {
-    if (!this._engine || !this._remoteUsers.has(userId)) return;
+  /** Bind a remote user's main stream and report binding failures in the card.
+   * @returns {Promise<void>} Completes after the SDK finishes binding the player.
+   */
+  async _selectRemoteUser(userId) {
+    const engine = this._engine;
+    if (!engine || !this._remoteUsers.has(userId)) return;
     const index = this._streamIndex?.STREAM_INDEX_MAIN;
     if (index == null) return;
-    if (this._activeRemoteUser && this._activeRemoteUser !== userId) {
-      this._engine.setRemoteVideoPlayer(index, { userId: this._activeRemoteUser });
+    try {
+      if (this._activeRemoteUser && this._activeRemoteUser !== userId) {
+        await engine.setRemoteVideoPlayer(index, { userId: this._activeRemoteUser });
+      }
+      await engine.setRemoteVideoPlayer(index, { userId, renderDom: this._video });
+    } catch (error) {
+      if (this._engine === engine) {
+        this._empty.hidden = false;
+        this._status.textContent = `播放器绑定失败：${this._message(error)}`;
+      }
+      return;
     }
-    this._engine.setRemoteVideoPlayer(index, { userId, renderDom: this._video });
+    if (this._engine !== engine) return;
     this._activeRemoteUser = userId;
     this._empty.hidden = true;
-    this._status.textContent = "正在播放远端视频";
+    const frameState = this._remoteFrameStates.get(userId);
+    this._status.textContent = frameState?.rendered
+      ? "RTC 已渲染视频首帧"
+      : frameState?.decoded
+        ? "RTC 已解码视频首帧，等待播放器绘制"
+        : "播放器已绑定，等待车辆视频首帧";
+  }
+
+  /** Store SDK decode/render milestones and show the active user's video stage. */
+  _reportRemoteVideoFrame(streamKey, stage) {
+    const userId = streamKey?.userId;
+    if (!userId) return;
+    const state = this._remoteFrameStates.get(userId) || { decoded: false, rendered: false };
+    state[stage] = true;
+    this._remoteFrameStates.set(userId, state);
+    if (userId !== this._activeRemoteUser) return;
+    this._status.textContent = state.rendered
+      ? "RTC 已渲染视频首帧"
+      : "RTC 已解码视频首帧，等待播放器绘制";
   }
 
   /** Remove a remote publisher when its video ends or it leaves the room. */
@@ -192,6 +235,7 @@ class ZeekrSentinelCard extends HTMLElement {
     const userId = event.userId || event.userInfo?.userId;
     if (!userId) return;
     this._remoteUsers.delete(userId);
+    this._remoteFrameStates.delete(userId);
     if (this._activeRemoteUser === userId) {
       this._activeRemoteUser = null;
       this._video.querySelectorAll("video").forEach((video) => video.remove());
@@ -258,6 +302,7 @@ class ZeekrSentinelCard extends HTMLElement {
     this._engine = null;
     this._activeRemoteUser = null;
     this._remoteUsers.clear();
+    this._remoteFrameStates.clear();
     this._refreshStreamSelect();
     if (engine) {
       try {

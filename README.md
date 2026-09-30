@@ -10,17 +10,24 @@ The first status update runs during setup. Vehicle status then refreshes every 6
 
 ## Add the sentry video card
 
-Add this module resource under **Settings → Dashboards → Resources**:
+Installing the Zeekr integration serves the card file, but Home Assistant does not add it to a dashboard automatically. Register its JavaScript resource first:
 
-| URL | Type |
-| --- | --- |
-| `/api/zeekr/zeekr-sentinel-card.js` | JavaScript module |
+1. Open **Settings → Dashboards**, then open the top-right **⋮** menu and choose **Resources**.
+2. Select **Add resource** and enter:
 
-Then add a manual card with this YAML:
+   | URL | Type |
+   | --- | --- |
+   | `/api/zeekr/zeekr-sentinel-card.js` | JavaScript module |
+
+3. Save the resource, then use **⋮ → Reload resources** (or refresh the browser page).
+4. Open the dashboard, choose **Edit dashboard → Add card**, and search for **Zeekr 哨兵视频**.
+5. If it is not listed, choose **Manual** and paste:
 
 ```yaml
 type: custom:zeekr-sentinel-card
 ```
+
+The card contains its own vehicle selector and **开始观看** button; no entity ID is needed. If Home Assistant reports that the custom element does not exist, the resource was not loaded—check its URL and type, reload resources, and reopen the dashboard editor.
 
 The card asks the integration for a short-lived room session, then uses the fixed `@volcengine/rtc@4.69.2` Web SDK to join and render the vehicle's main stream. It reconnects when the room duration or RTC token expires. The browser loads that pinned SDK from unpkg when playback starts, so the dashboard browser must be able to reach `unpkg.com`. The browser receives only the short-lived RTC session token; Zeekr account tokens and request-signing keys stay in the integration backend.
 
