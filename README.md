@@ -43,7 +43,7 @@ The integration was ported from a Node-RED flow and replaces it: the entity mapp
 
 ## Requirements
 
-<<<<<<< Updated upstream
+Updated upstream
 The card contains its own vehicle selector and **开始观看** button; no entity ID is needed. After joining the vehicle room, the card provides front, rear, left, and right camera buttons plus on-demand remote talk. Remote talk requests browser microphone permission when it starts and releases the microphone when it stops or leaves the room. Use Home Assistant through HTTPS or localhost so the browser can grant microphone access. If Home Assistant reports that the custom element does not exist, the resource was not loaded—check its URL and type, reload resources, and reopen the dashboard editor.
 
 The card asks the integration for a short-lived room session, then uses the fixed `@volcengine/rtc@4.69.2` Web SDK to join and render the vehicle's main stream. Camera buttons send the verified `cmd_action_change_source` RTC room message, while remote talk publishes microphone audio only while the talk control is active. It reconnects when the room duration or RTC token expires. The browser loads that pinned SDK from unpkg when playback starts, so the dashboard browser must be able to reach `unpkg.com`. The browser receives only the short-lived RTC session token; Zeekr account tokens and request-signing keys stay in the integration backend.
@@ -84,7 +84,7 @@ Setup is a single sign-in flow:
 Home Assistant generates the entity ID prefix from that device name; the stable part of each entity is its unique ID suffix listed below. The first status update runs during setup.
 
 Session tokens are stored in the config entry. The app's fixed signing values stay in the integration code. When Home Assistant reports that the integration needs reauthentication, run the SMS flow again — that also re-reads the vehicle list, so reauthenticate after the account's shared-vehicle list changes.
->>>>>>> Stashed changes
+
 
 ## Entities
 
