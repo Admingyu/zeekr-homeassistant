@@ -29,5 +29,125 @@
       "already_configured": "此 Zeekr 账号已配置。",
       "reauth_successful": "Zeekr 账号已重新验证。"
     }
+  },
+  "services": {
+    "find_vehicle": {
+      "name": "寻车",
+      "description": "鸣笛并闪灯，便于找到车辆。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要鸣笛闪灯的车辆。"
+        }
+      }
+    },
+    "lock_doors": {
+      "name": "锁车",
+      "description": "锁闭车辆所有车门。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要锁车的车辆。"
+        }
+      }
+    },
+    "unlock_doors": {
+      "name": "解锁车",
+      "description": "解锁车辆所有车门。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要解锁的车辆。"
+        }
+      }
+    },
+    "set_climate": {
+      "name": "设置空调",
+      "description": "按目标温度和运行时长开启空调，或关闭空调。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要控制空调的车辆。"
+        },
+        "enabled": {
+          "name": "开启空调",
+          "description": "开启空调；关闭此项则关闭空调。"
+        },
+        "temperature": {
+          "name": "目标温度",
+          "description": "目标温度（摄氏度）。关闭空调时忽略。"
+        },
+        "duration": {
+          "name": "运行时长",
+          "description": "运行分钟数。关闭空调时忽略。"
+        }
+      }
+    },
+    "set_seat_heating": {
+      "name": "设置座椅加热",
+      "description": "按档位和运行时长开启主驾座椅加热，或关闭座椅加热。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要控制座椅加热的车辆。"
+        },
+        "enabled": {
+          "name": "开启加热",
+          "description": "开启座椅加热；关闭此项则关闭座椅加热。"
+        },
+        "level": {
+          "name": "档位",
+          "description": "1 至 3 档。关闭加热时忽略。"
+        },
+        "duration": {
+          "name": "运行时长",
+          "description": "运行分钟数。关闭加热时忽略。"
+        }
+      }
+    },
+    "set_steering_wheel_heating": {
+      "name": "设置方向盘加热",
+      "description": "按档位和运行时长开启方向盘加热，或关闭方向盘加热。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "需要控制方向盘加热的车辆。"
+        },
+        "enabled": {
+          "name": "开启加热",
+          "description": "开启方向盘加热；关闭此项则关闭方向盘加热。"
+        },
+        "level": {
+          "name": "档位",
+          "description": "1 至 3 档。关闭加热时忽略。"
+        },
+        "duration": {
+          "name": "运行时长",
+          "description": "运行分钟数。关闭加热时忽略。"
+        }
+      }
+    },
+    "remote_control": {
+      "name": "发送原始远程控制指令",
+      "description": "向指定车辆发送集成尚未封装的远程控制指令。",
+      "fields": {
+        "vin": {
+          "name": "车辆 VIN",
+          "description": "接收指令的车辆。"
+        },
+        "service_id": {
+          "name": "服务 ID",
+          "description": "App 服务标识，例如 ZAF、RDL、RDU、RHL、RSM。"
+        },
+        "command": {
+          "name": "指令",
+          "description": "服务需要的指令动词，通常为 start 或 stop。"
+        },
+        "parameters": {
+          "name": "服务参数",
+          "description": "App 服务参数键值对。"
+        }
+      }
+    }
   }
 }
