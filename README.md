@@ -11,7 +11,7 @@ An unofficial Home Assistant custom integration for **Zeekr (极氪)** vehicles.
 The integration was ported from a Node-RED flow and replaces it: the entity mapping is listed below so existing dashboards can be migrated.
 
 > [!WARNING]
-> This is not an official integration. It talks to undocumented Zeekr mobile-app endpoints with a request-signing scheme, so it can break at any time. Remote commands operate a real vehicle — only send them when it is safe to do so.
+> This is not an official integration. It talks to unpublished Zeekr mobile-app endpoints that can change at any time, so it can break without notice. Remote commands operate a real vehicle — only send them when it is safe to do so.
 
 ## Contents
 
@@ -84,7 +84,7 @@ Setup is a single sign-in flow:
 Home Assistant generates the entity ID prefix from that device name; the stable part of each entity is its unique ID suffix listed below. The first status update runs during setup.
 
 Session tokens are stored in the config entry. The app's fixed signing values stay in the integration code. When Home Assistant reports that the integration needs reauthentication, run the SMS flow again — that also re-reads the vehicle list, so reauthenticate after the account's shared-vehicle list changes.
->>>>>>> Stashed changes
+
 
 ## Entities
 
@@ -202,7 +202,7 @@ data:
 
 These commands report no confirmable state: the status endpoint does not expose a settled climate, heating, or door state. They are therefore stateless buttons and actions rather than switch or climate entities, and the integration polls the vehicle once after each command so dependent entities refresh sooner. Only sentry mode reads back a state, because `basicVehicleStatus.usageMode` reports it.
 
-Request bodies are copied verbatim from the app, including its inconsistent value types — the air-conditioning and seat flags are the strings `"true"`/`"false"`, the steering-wheel flag is a JSON boolean, and the horn/light and steering-wheel commands use an empty `command` while the others send `start`. The bodies live in `custom_components/zeekr/remote_control.py` as pure builders, and `tests/test_remote_control.py` pins them.
+Request bodies match the app exactly, including its inconsistent value types — the air-conditioning and seat flags are the strings `"true"`/`"false"`, the steering-wheel flag is a JSON boolean, and the horn/light and steering-wheel commands use an empty `command` while the others send `start`. The bodies live in `custom_components/zeekr/remote_control.py` as pure builders, and `tests/test_remote_control.py` pins them.
 
 Only the driver seat (`SH.11`) is modelled; other seat positions would use their own app keys through `zeekr.remote_control`.
 
@@ -265,7 +265,7 @@ signing.py ─────────────────────┘   
 
 ## Limitations and disclaimer
 
-- Unofficial and unaffiliated with Zeekr. All API endpoints and signing values were reverse-engineered from the mobile app and can change without notice.
+- Unofficial and unaffiliated with Zeekr. All API endpoints and signing values are unpublished and may change without notice.
 - The account, vehicle, and RTC calls depend on Zeekr cloud services. Outages, model-specific response differences, and regional restrictions are outside this integration's control.
 - Remote commands act on a real vehicle. Verify the VIN before automating lock, unlock, climate, or heating commands, and never run them unattended in a location where an unexpected action is dangerous.
 - No confirmable state exists for climate, heating, or doors, so automations cannot wait for those commands to be confirmed.
