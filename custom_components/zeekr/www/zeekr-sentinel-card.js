@@ -1,4 +1,12 @@
 /** Home Assistant card that starts and displays a Zeekr sentinel RTC session. */
+
+/** RTC SDK served by this integration itself, so playback needs no public CDN access. */
+const RTC_SDK_URL = "/api/zeekr/volcengine-rtc-4.69.2.js";
+
+/** Same pinned version from the CDN, used only when the bundled copy cannot load. */
+const RTC_SDK_FALLBACK_URL =
+  "https://unpkg.com/@volcengine/rtc@4.69.2/index.esm.min.js";
+
 class ZeekrSentinelCard extends HTMLElement {
   /** Initialize the card state and create its initial controls. */
   constructor() {
@@ -122,6 +130,23 @@ class ZeekrSentinelCard extends HTMLElement {
     }
   }
 
+  /** Import the bundled RTC SDK and only fall back to the CDN when it is unavailable.
+   * @returns {Promise<Object>} The SDK module namespace.
+   */
+  async _loadRtcSdk() {
+    try {
+      return await import(RTC_SDK_URL);
+    } catch (error) {
+      const fallback = await import(RTC_SDK_FALLBACK_URL).catch(() => null);
+      if (!fallback) {
+        throw new Error(
+          `本地 RTC SDK 加载失败，且无法访问 CDN：${this._message(error)}`,
+        );
+      }
+      return fallback;
+    }
+  }
+
   /** Fetch a short-lived RTC session, join its room, and wait for vehicle video. */
   async _startRoom() {
     if (!this._hass || !this._selectedVin || this._engine) return;
@@ -133,9 +158,7 @@ class ZeekrSentinelCard extends HTMLElement {
         type: "zeekr/start_sentinel",
         vin: this._selectedVin,
       });
-      const { default: VERTC, MediaType, StreamIndex } = await import(
-        "https://unpkg.com/@volcengine/rtc@4.69.2/index.esm.min.js"
-      );
+      const { default: VERTC, MediaType, StreamIndex } = await this._loadRtcSdk();
       this._streamIndex = StreamIndex;
       this._mediaType = MediaType;
       this._rtcEvents = VERTC.events;

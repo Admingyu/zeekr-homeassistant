@@ -29,7 +29,7 @@ type: custom:zeekr-sentinel-card
 
 The card contains its own vehicle selector and **开始观看** button; no entity ID is needed. If Home Assistant reports that the custom element does not exist, the resource was not loaded—check its URL and type, reload resources, and reopen the dashboard editor.
 
-The card asks the integration for a short-lived room session, then uses the fixed `@volcengine/rtc@4.69.2` Web SDK to join and render the vehicle's main stream. It reconnects when the room duration or RTC token expires. The browser loads that pinned SDK from unpkg when playback starts, so the dashboard browser must be able to reach `unpkg.com`. The browser receives only the short-lived RTC session token; Zeekr account tokens and request-signing keys stay in the integration backend.
+The card asks the integration for a short-lived room session, then uses the fixed `@volcengine/rtc@4.69.2` Web SDK to join and render the vehicle's main stream. It reconnects when the room duration or RTC token expires. The SDK is bundled with the integration and served from `/api/zeekr/volcengine-rtc-4.69.2.js`, so playback works without internet access to any public CDN; the pinned copy also ships its BSD-3-Clause license at `custom_components/zeekr/www/volcengine-rtc-LICENSE`. If that bundled file cannot load, the card falls back to the same pinned version on `unpkg.com`. The browser receives only the short-lived RTC session token; Zeekr account tokens and request-signing keys stay in the integration backend.
 
 ## Entities
 
@@ -56,12 +56,64 @@ Each supported vehicle exposes these entities. The exact entity ID prefix is gen
 | Location | device_tracker | `location` |
 | Refresh | button | `refresh` |
 | SentryModeSwitch | switch | `sentry_mode` |
+| Find Vehicle | button | `find_vehicle` |
+| Lock Doors | button | `lock_doors` |
+| Unlock Doors | button | `unlock_doors` |
 
-Old-model status entities are not included. The old account endpoint is still used during setup to distinguish old-model VINs from the supported vehicle list. Refresh and sentry actions immediately poll only the selected vehicle; the sentry switch confirms its state from that response. The Node-RED `Unlock` button only triggered a refresh; no unlock control is implemented.
+Old-model status entities are not included. The old account endpoint is still used during setup to distinguish old-model VINs from the supported vehicle list. Refresh and sentry actions immediately poll only the selected vehicle; the sentry switch confirms its state from that response.
 
 ## Actions
 
 `zeekr.get_monthly_statistics` returns a service response and accepts `vin`, `year_month` (`YYYY-MM`), and `account_id`. `zeekr.get_app_messages` accepts `vin` and returns a service response. Use Home Assistant's response-capable action UI or an automation/script that supports action response data.
+
+## Remote actions
+
+Every remote command posts to the same app endpoint (`/ms-remote-control/v1.0/remoteControl/control`) with a different body. Three commands need no parameters and are also exposed as the buttons listed above; the rest are actions:
+
+| Action | Fields | Effect |
+| --- | --- | --- |
+| `zeekr.find_vehicle` | `vin` | Flash the horn and lights |
+| `zeekr.lock_doors` | `vin` | Lock all doors |
+| `zeekr.unlock_doors` | `vin` | Unlock all doors |
+| `zeekr.set_climate` | `vin`, `enabled`, `temperature` (16–30 °C, default 22), `duration` (1–30 min, default 15) | Start air conditioning, or stop it |
+| `zeekr.set_seat_heating` | `vin`, `enabled`, `level` (1–3, default 3), `duration` (1–15 min, default 15) | Driver-seat heating |
+| `zeekr.set_steering_wheel_heating` | same as seat heating | Steering-wheel heating |
+| `zeekr.remote_control` | `vin`, `service_id`, `command` (default `start`), `parameters` | Any other app command |
+
+Starting air conditioning at 22 °C for 15 minutes:
+
+```yaml
+action: zeekr.set_climate
+data:
+  vin: YOUR_VIN
+  enabled: true
+  temperature: 22
+  duration: 15
+```
+
+Stopping it, and switching on steering-wheel heating at level 3 for 15 minutes:
+
+```yaml
+action: zeekr.set_climate
+data:
+  vin: YOUR_VIN
+  enabled: false
+```
+
+```yaml
+action: zeekr.set_steering_wheel_heating
+data:
+  vin: YOUR_VIN
+  enabled: true
+  level: 3
+  duration: 15
+```
+
+These commands report no confirmable state: the status endpoint used for the 60-second poll does not expose a settled climate, heating, or door state. The integration therefore exposes them as stateless buttons and actions rather than switch or climate entities, and polls the vehicle once after each command so dependent entities refresh sooner. Only the sentry switch reads back a state, because `basicVehicleStatus.usageMode` reports it.
+
+Request bodies are copied verbatim from the app, including its inconsistent value types — the air-conditioning and seat flags are the strings `"true"`/`"false"`, the steering-wheel flag is a JSON boolean, and the horn/light and steering-wheel commands use an empty `command` while the others send `start`. `custom_components/zeekr/remote_control.py` holds these bodies as pure builders and `tests/test_remote_control.py` pins them. Use `zeekr.remote_control` to try a service ID that is not modelled yet without changing the integration.
+
+Only the driver seat (`SH.11`) is modelled; other seat positions would use their own app keys through `zeekr.remote_control`.
 
 ## Migration from Node-RED
 
