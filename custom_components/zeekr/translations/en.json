@@ -29,5 +29,125 @@
       "already_configured": "This Zeekr account is already configured.",
       "reauth_successful": "Zeekr account reauthenticated."
     }
+  },
+  "services": {
+    "find_vehicle": {
+      "name": "Find vehicle",
+      "description": "Flash the horn and lights so the vehicle can be located.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle that should flash its horn and lights."
+        }
+      }
+    },
+    "lock_doors": {
+      "name": "Lock doors",
+      "description": "Lock every door on the vehicle.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle whose doors should be locked."
+        }
+      }
+    },
+    "unlock_doors": {
+      "name": "Unlock doors",
+      "description": "Unlock every door on the vehicle.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle whose doors should be unlocked."
+        }
+      }
+    },
+    "set_climate": {
+      "name": "Set climate",
+      "description": "Start air conditioning with a target temperature and run time, or stop it.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle whose air conditioning should be changed."
+        },
+        "enabled": {
+          "name": "Start climate",
+          "description": "Turn on air conditioning. Clear it to turn it off."
+        },
+        "temperature": {
+          "name": "Temperature",
+          "description": "Target temperature in °C. Ignored when starting is disabled."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Run time in minutes. Ignored when starting is disabled."
+        }
+      }
+    },
+    "set_seat_heating": {
+      "name": "Set seat heating",
+      "description": "Start driver-seat heating with a level and run time, or stop it.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle whose seat heating should be changed."
+        },
+        "enabled": {
+          "name": "Start heating",
+          "description": "Turn on seat heating. Clear it to turn it off."
+        },
+        "level": {
+          "name": "Level",
+          "description": "Heat level from 1 to 3. Ignored when starting is disabled."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Run time in minutes. Ignored when starting is disabled."
+        }
+      }
+    },
+    "set_steering_wheel_heating": {
+      "name": "Set steering-wheel heating",
+      "description": "Start steering-wheel heating with a level and run time, or stop it.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle whose steering-wheel heating should be changed."
+        },
+        "enabled": {
+          "name": "Start heating",
+          "description": "Turn on steering-wheel heating. Clear it to turn it off."
+        },
+        "level": {
+          "name": "Level",
+          "description": "Heat level from 1 to 3. Ignored when starting is disabled."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Run time in minutes. Ignored when starting is disabled."
+        }
+      }
+    },
+    "remote_control": {
+      "name": "Send raw remote control",
+      "description": "Send an unmodelled remote-control command to one Zeekr vehicle.",
+      "fields": {
+        "vin": {
+          "name": "Vehicle VIN",
+          "description": "Vehicle that should receive the command."
+        },
+        "service_id": {
+          "name": "Service ID",
+          "description": "App service identifier such as ZAF, RDL, RDU, RHL, or RSM."
+        },
+        "command": {
+          "name": "Command",
+          "description": "Command verb the service expects, usually start or stop."
+        },
+        "parameters": {
+          "name": "Service parameters",
+          "description": "Mapping of app service-parameter keys to values."
+        }
+      }
+    }
   }
 }
