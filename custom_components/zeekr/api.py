@@ -23,12 +23,25 @@ from .const import (
     CONF_USER_ID,
     CONF_VEHICLES,
 )
+from .remote_control import (
+    climate_payload,
+    custom_payload,
+    door_payload,
+    find_vehicle_payload,
+    seat_heating_payload,
+    sentry_payload,
+    steering_wheel_heating_payload,
+)
 from .signing import (
     gateway_signature,
     legacy_signature,
     new_signature_headers,
     request_url,
 )
+
+# Shared endpoint for horn/lights, climate, doors, seat and sentry commands.
+REMOTE_CONTROL_PATH = "/ms-remote-control/v1.0/remoteControl/control"
+
 
 class ZeekrApiError(Exception):
     """Base error for failed requests or business responses from Zeekr."""
@@ -185,19 +198,75 @@ class ZeekrApi:
             raise ZeekrApiError("Vehicle status response data was not an object")
         return data
 
-    async def async_set_sentry(self, vin: str, enabled: bool) -> None:
-        """Start or stop the RSM sentry service for one vehicle."""
+    async def async_remote_control(self, vin: str, payload: Dict[str, Any]) -> None:
+        """Send one prepared remote-control body to a single vehicle."""
         response = await self._new_call(
             "POST",
-            "/ms-remote-control/v1.0/remoteControl/control",
-            payload={
-                "command": "start" if enabled else "stop",
-                "serviceId": "RSM",
-                "setting": {"serviceParameters": [{"key": "rsm", "value": "6"}]},
-            },
+            REMOTE_CONTROL_PATH,
+            payload=payload,
             headers={"X-VIN": vin, "X-APP-ID": APP_ID},
         )
         self._expect_code(response, "000000")
+
+    async def async_find_vehicle(self, vin: str) -> None:
+        """Flash the vehicle's horn and lights."""
+        await self.async_remote_control(vin, find_vehicle_payload())
+
+    async def async_set_doors(self, vin: str, locked: bool) -> None:
+        """Lock or unlock every door on one vehicle."""
+        await self.async_remote_control(vin, door_payload(locked))
+
+    async def async_set_climate(
+        self,
+        vin: str,
+        enabled: bool,
+        temperature: Optional[float] = None,
+        duration: Optional[int] = None,
+    ) -> None:
+        """Start air conditioning, or stop it, for one vehicle."""
+        await self.async_remote_control(
+            vin, climate_payload(enabled, temperature, duration)
+        )
+
+    async def async_set_seat_heating(
+        self,
+        vin: str,
+        enabled: bool,
+        level: Optional[int] = None,
+        duration: Optional[int] = None,
+    ) -> None:
+        """Start or stop the driver-seat heating in one vehicle."""
+        await self.async_remote_control(
+            vin, seat_heating_payload(enabled, level, duration)
+        )
+
+    async def async_set_steering_wheel_heating(
+        self,
+        vin: str,
+        enabled: bool,
+        level: Optional[int] = None,
+        duration: Optional[int] = None,
+    ) -> None:
+        """Start or stop steering-wheel heating in one vehicle."""
+        await self.async_remote_control(
+            vin, steering_wheel_heating_payload(enabled, level, duration)
+        )
+
+    async def async_send_raw_control(
+        self,
+        vin: str,
+        service_id: str,
+        command: str,
+        parameters: Mapping[str, Any],
+    ) -> None:
+        """Send an unmodelled command so new app actions need no code change."""
+        await self.async_remote_control(
+            vin, custom_payload(command, service_id, parameters)
+        )
+
+    async def async_set_sentry(self, vin: str, enabled: bool) -> None:
+        """Start or stop the RSM sentry service for one vehicle."""
+        await self.async_remote_control(vin, sentry_payload(enabled))
 
     async def async_get_monthly_statistics(
         self, vin: str, year_month: str, account_id: str
